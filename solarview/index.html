@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Exoplanet Explorer: Cosmic Connections</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+        }
+        #galaxyCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #infoPanel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        #infoPanel h2, #infoPanel h3 {
+            margin-top: 0;
+            color: #4CAF50;
+            border-bottom: 1px solid #4CAF50;
+            padding-bottom: 5px;
+        }
+        #infoPanel p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 14px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #distanceInfo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 14px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="galaxyCanvas"></canvas>
+    <div id="title">NASA Exoplanet Explorer: Cosmic Connections</div>
+    <div id="infoPanel">
+        <h2>Exoplanet Information</h2>
+        <div id="exoplanetInfo">Click on a star to view exoplanet details.</div>
+    </div>
+    <div id="instructions">Use mouse wheel to zoom. Click and drag to pan. Click on stars to learn about exoplanets.</div>
+    <div id="distanceInfo">Distance from Earth: <span id="lightYears">0</span> light-years</div>
+    <canvas id="minimap"></canvas>
+
+    <script>
+        const canvas = document.getElementById('galaxyCanvas');
+        const ctx = canvas.getContext('2d');
+        const infoPanel = document.getElementById('exoplanetInfo');
+        const distanceInfoSpan = document.getElementById('lightYears');
+        const minimap = document.getElementById('minimap');
+        const minimapCtx = minimap.getContext('2d');
+
+        let stars = [];
+        let zoom = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        const NUM_STARS = 1000;
+        let selectedStar = null;
+        let isDragging = false;
+        let lastMouseX, lastMouseY;
+
+        // Enhanced exoplanet data
+        const exoplanetData = [
+            { name: "Proxima Centauri b", distance: 4.2, planetType: "Super Earth", discoveryYear: 2016, temperature: "234 K", habitability: "Potentially habitable", earthComparison: "1.3 times Earth's radius", link: "https://en.wikipedia.org/wiki/Proxima_Centauri_b" },
+            { name: "TRAPPIST-1e", distance: 39, planetType: "Terrestrial", discoveryYear: 2017, temperature: "251 K", habitability: "Within habitable zone", earthComparison: "0.92 times Earth's radius", link: "https://en.wikipedia.org/wiki/TRAPPIST-1e" },
+            { name: "Kepler-186f", distance: 582, planetType: "Terrestrial", discoveryYear: 2014, temperature: "188 K", habitability: "Potentially habitable", earthComparison: "1.17 times Earth's radius", link: "https://en.wikipedia.org/wiki/Kepler-186f" },
+            { name: "HD 219134 b", distance: 21, planetType: "Super Earth", discoveryYear: 2015, temperature: "958 K", habitability: "Too hot for life as we know it", earthComparison: "1.6 times Earth's radius", link: "https://en.wikipedia.org/wiki/HD_219134_b" },
+            { name: "Gliese 667 Cc", distance: 23.6, planetType: "Super Earth", discoveryYear: 2011, temperature: "277 K", habitability: "Within habitable zone", earthComparison: "1.54 times Earth's radius", link: "https://en.wikipedia.org/wiki/Gliese_667_Cc" },
+            { name: "K2-18b", distance: 124, planetType: "Super Earth", discoveryYear: 2015, temperature: "265 K", habitability: "Potentially habitable", earthComparison: "2.6 times Earth's radius", link: "https://en.wikipedia.org/wiki/K2-18b" },
+            { name: "Teegarden's Star b", distance: 12.5, planetType: "Terrestrial", discoveryYear: 2019, temperature: "264 K", habitability: "Potentially habitable", earthComparison: "1.05 times Earth's radius", link: "https://en.wikipedia.org/wiki/Teegarden%27s_Star" },
+            { name: "TOI-700 d", distance: 101.4, planetType: "Terrestrial", discoveryYear: 2020, temperature: "268 K", habitability: "Within habitable zone", earthComparison: "1.19 times Earth's radius", link: "https://en.wikipedia.org/wiki/TOI_700_d" },
+            { name: "Kepler-442b", distance: 1206, planetType: "Super Earth", discoveryYear: 2015, temperature: "233 K", habitability: "Potentially habitable", earthComparison: "1.34 times Earth's radius", link: "https://en.wikipedia.org/wiki/Kepler-442b" },
+            { name: "Kepler-62f", distance: 1200, planetType: "Super Earth", discoveryYear: 2013, temperature: "208 K", habitability: "Within habitable zone", earthComparison: "1.41 times Earth's radius", link: "https://en.wikipedia.org/wiki/Kepler-62f" },
+        ];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            minimap.width = 150;
+            minimap.height = 150;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Star {
+            constructor(x, y, distance) {
+                this.x = x;
+                this.y = y;
+                this.distance = distance;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.exoplanet = exoplanetData[Math.floor(Math.random() * exoplanetData.length)];
+                
+                // Color stars based on distance from Earth
+                if (distance < 50) {
+                    this.color = `rgba(255, 0, 0, ${Math.random() * 0.5 + 0.5})`; // Nearby stars are red and shiny
+                } else {
+                    this.color = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.5})`;
+                }
+            }
+
+            draw() {
+                const x = (this.x - offsetX) * zoom + canvas.width / 2;
+                const y = (this.y - offsetY) * zoom + canvas.height / 2;
+
+                if (x < -100 || x > canvas.width + 100 || y < -100 || y > canvas.height + 100) return;
+
+                ctx.fillStyle = this === selectedStar ? '#4CAF50' : this.color;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size * zoom, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            isClicked(mouseX, mouseY) {
+                const x = (this.x - offsetX) * zoom + canvas.width / 2;
+                const y = (this.y - offsetY) * zoom + canvas.height / 2;
+
+                return Math.hypot(mouseX - x, mouseY - y) < 10;
+            }
+        }
+
+        function initStars() {
+            stars = [];
+
+            // Earth representation
+            stars.push(new Star(0, 0, 0));
+            stars[0].color = 'rgba(0, 100, 255, 0.8)'; // Blue Earth
+
+            for (let i = 0; i < NUM_STARS; i++) {
+                const distance = Math.random() * 1000;
+                const angle = Math.random() * Math.PI * 2;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                stars.push(new Star(x, y, distance));
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => star.draw());
+        }
+
+        function updateInfoPanel(star) {
+            if (star) {
+                const info = `
+                    <h3>${star.exoplanet.name}</h3>
+                    <p><strong>Distance:</strong> ${star.exoplanet.distance} light-years</p>
+                    <p><strong>Planet Type:</strong> ${star.exoplanet.planetType}</p>
+                    <p><strong>Discovered:</strong> ${star.exoplanet.discoveryYear}</p>
+                    <p><strong>Temperature:</strong> ${star.exoplanet.temperature}</p>
+                    <p><strong>Habitability:</strong> ${star.exoplanet.habitability}</p>
+                    <p><strong>Comparison to Earth:</strong> ${star.exoplanet.earthComparison}</p>
+                    <p><a href="${star.exoplanet.link}" target="_blank">Learn more about ${star.exoplanet.name}</a></p>
+                `;
+                infoPanel.innerHTML = info;
+                distanceInfoSpan.innerText = star.exoplanet.distance;
+            } else {
+                infoPanel.innerHTML = 'Click on a star to view exoplanet details.';
+                distanceInfoSpan.innerText = '0';
+            }
+        }
+
+        canvas.addEventListener('mousedown', function (e) {
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            isDragging = true;
+        });
+
+        canvas.addEventListener('mouseup', function () {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mousemove', function (e) {
+            if (isDragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                offsetX -= dx / zoom;
+                offsetY -= dy / zoom;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                drawStars();
+            }
+        });
+
+        canvas.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            const zoomAmount = e.deltaY * -0.001;
+            zoom = Math.min(Math.max(zoom + zoomAmount, 0.1), 5);
+            drawStars();
+        });
+
+        canvas.addEventListener('click', function (e) {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            selectedStar = null;
+            for (let star of stars) {
+                if (star.isClicked(mouseX, mouseY)) {
+                    selectedStar = star;
+                    break;
+                }
+            }
+
+            updateInfoPanel(selectedStar);
+            drawStars();
+        });
+
+        function drawMinimap() {
+            minimapCtx.clearRect(0, 0, minimap.width, minimap.height);
+            minimapCtx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            minimapCtx.fillRect(0, 0, minimap.width, minimap.height);
+
+            stars.forEach(star => {
+                const x = (star.x / 1000) * minimap.width / 2 + minimap.width / 2;
+                const y = (star.y / 1000) * minimap.height / 2 + minimap.height / 2;
+
+                minimapCtx.fillStyle = star === selectedStar ? '#4CAF50' : star.color;
+                minimapCtx.beginPath();
+                minimapCtx.arc(x, y, star.size, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+        }
+
+        function animate() {
+            drawStars();
+            drawMinimap();
+            requestAnimationFrame(animate);
+        }
+
+        initStars();
+        animate();
+    </script>
+</body>
+</html>

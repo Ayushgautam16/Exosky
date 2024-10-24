@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome To Steller Inside</title>
+    <link rel='shortcut icon' href='images/star.ico'>
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/semantic.min.js"></script>
+    <script type="text/javascript" src="js/html2canvas.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="css/stars.css">
+    <script type="text/javascript" src="js/constellations.js"></script>
+
+    <style>
+        /* Modal container */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 40%; /* Full height */
+            background-color: rgba(0, 0, 0, 0.6); /* Black background with opacity */
+        }
+
+        /* Modal content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%; /* Bigger width */
+            text-align: center; /* Center text */
+        }
+
+        /* Close button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <div>
+        <div id="stars">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <div id="showNav" title="options">
+        <i class="big star icon"></i>
+    </div>
+    <div id="clear" title="Clear the lines">
+        <i class="big remove icon"></i>
+    </div>
+    <div id="reset" title="Generate new stars">
+        <i class="big refresh icon"></i>
+    </div>
+    <div id="save" title="Save the pattern">
+        <i class="big photo icon"></i>
+    </div>
+<main>
+<div id="nav" class="ui right sidebar menu">
+    <a class="item">
+        <div>Number of Stars: <span id="nbStarsValue"></span></div><br/><input type="range" min="30" max="200"
+                                                                               id="nbStars"/>
+        <div class="small">All patterns are cleared when removing stars</div>
+    </a>
+    <a class="item">
+        Sky Colour: <input type="color" value="rgb(5,5,32)" id="skyColour"/>
+    </a>
+    <a class="item check">
+        <div class="inline field">
+            <div class="ui checkbox">
+                <input type="checkbox" id="resize">
+            </div>
+        </div>
+        <div>Resize with Window</div>
+        <div class="very small">Constellation lines and stars may not line up when resizing is on</div>
+    </a>
+</div>
+<div class="ui small modal" id="start">
+    <div class="content">
+        <div class="ui horizontal center aligned segment">
+            <h1 class="ui header">Welcome To Steller Inside!</h1>
+            <h4 class="ui header">
+                Embark on a celestial journey where you can connect the stars to create your own constellations. Give your constellations a name, explore the night sky, and even save an image of your unique creation!
+            </h4>
+            <br/>
+            <div class="ui button blue close">Start</div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Constellation Popup Modal -->
+<div id="popupModal" class="modal">
+    <div class="modal-content">
+        <span id="closePopup" class="close">&times;</span>
+        <p>Share your constellation using the link below:</p>
+        <p id="staticLink">http://127.0.0.1:5500/constellation-maker-master/index.html</p>
+        <button id="copyLinkButton" class="ui button blue">Copy Link</button>
+    </div>
+</div>
+
+<div class="ui modal" id="download">
+    <i class="close icon"></i>
+    <div class="content">
+        <div class="ui horizontal center aligned segment">
+            <img class="ui centered image" id="preview" src="">
+            <br/>
+
+            <div class="ui horizontal center aligned segment">
+                <img class="ui centered image" id="preview" src="">
+                <br/>
+                <a class="ui button blue" id="nameConstellationButton" onclick="nameConstellation()">Name the
+                    constellation</a>
+                <a class="ui button blue" id="downloadButton" download="constellation.png">Download</a>
+                <a class="ui button blue" id="shareButton">Share Your Constellation</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function nameConstellation() {
+        // Prompt the user for a constellation name
+        const constellationName = prompt("Enter the name of the constellation:");
+
+        // Check if the user entered a name
+        if (constellationName) {
+            // Set the download button with the new name
+            const downloadButton = document.getElementById("downloadButton");
+            downloadButton.setAttribute("download", ${constellationName}.png);
+            alert(You named the constellation: ${constellationName});
+        } else {
+            alert("No name entered.");
+        }
+    }
+
+    // Share Constellation Button Click
+    document.getElementById('shareButton').addEventListener('click', function () {
+        document.getElementById('popupModal').style.display = "block";
+    });
+
+    // Copy Link Button Click
+    document.getElementById('copyLinkButton').addEventListener('click', function () {
+        const linkText = document.getElementById('staticLink');
+        const textArea = document.createElement('textarea');
+        textArea.value = linkText.textContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('Link copied to clipboard!');
+    });
+
+    // Close the modal when the user clicks the "x" button
+    document.getElementById('closePopup').addEventListener('click', function () {
+        document.getElementById('popupModal').style.display = "none";
+    });
+
+    // Close the modal if the user clicks anywhere outside of it
+    window.onclick = function (event) {
+        if (event.target == document.getElementById('popupModal')) {
+            document.getElementById('popupModal').style.display = "none";
+        }
+    };
+</script>
+
+</body>
+</html>
